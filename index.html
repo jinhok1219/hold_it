@@ -27,10 +27,22 @@
         #header {
             display: flex;
             justify-content: space-between;
+            align-items: flex-start;
             padding: 0 20px;
             font-size: 24px;
             font-weight: bold;
             margin-bottom: 20px;
+        }
+        
+        .score-container {
+            text-align: left;
+        }
+
+        .real-time-clock {
+            font-size: 14px;
+            color: #6b7280;
+            font-weight: normal;
+            margin-top: 4px;
         }
 
         .time-warning { color: red; }
@@ -65,9 +77,9 @@
             z-index: 5;
         }
 
-        /* 움직이는 바 (두께를 확 줄이고 위치를 정확히 맞춤!) */
+        /* 움직이는 바 */
         #indicator {
-            width: 4px; /* 기존 8px에서 4px로 다이어트! */
+            width: 4px;
             height: 48px;
             background-color: #ef4444;
             position: absolute;
@@ -75,7 +87,7 @@
             left: 0%;
             border-radius: 2px;
             box-shadow: 0 0 5px rgba(0,0,0,0.5);
-            transform: translateX(-50%); /* 시각적 위치와 판정 위치(%)를 100% 동일하게 맞춰주는 마법의 CSS */
+            transform: translateX(-50%);
             z-index: 10;
         }
 
@@ -178,8 +190,10 @@
         }
 
         #game-over-screen h1 { color: #facc15; font-size: 48px; margin-bottom: 10px; }
+        #game-over-screen h2 { margin-bottom: 5px; }
+        #game-over-time { font-size: 18px; color: #cbd5e1; margin-bottom: 20px; font-weight: normal; }
         #restart-btn {
-            margin-top: 20px; padding: 10px 20px; font-size: 20px;
+            padding: 10px 20px; font-size: 20px;
             background: #fff; color: #000; border: none; border-radius: 10px; cursor: pointer;
         }
     </style>
@@ -188,7 +202,10 @@
 
 <div id="game-container">
     <div id="header">
-        <div>버틴 시간: <span id="score-display">0</span>초</div>
+        <div class="score-container">
+            <div>버틴 시간: <span id="score-display">0</span>초</div>
+            <div id="live-clock-header" class="real-time-clock">KST --:--:--</div>
+        </div>
         <div id="time-display">10.0초</div>
     </div>
 
@@ -207,6 +224,7 @@
 <div id="game-over-screen">
     <h1>결국... 쌌다! 💩</h1>
     <h2>버틴 시간: <span id="final-score">0</span>초</h2>
+    <div id="game-over-time">기록 시간: KST --:--:--</div>
     <button id="restart-btn">다시 도전하기</button>
 </div>
 
@@ -238,6 +256,38 @@
     const gameOverScreen = document.getElementById('game-over-screen');
     const finalScore = document.getElementById('final-score');
     const restartBtn = document.getElementById('restart-btn');
+    
+    // 실시간 시계 요소 가져오기
+    const liveClockHeader = document.getElementById('live-clock-header');
+    const gameOverTime = document.getElementById('game-over-time');
+
+    // 실시간 한국 시간(KST) 업데이트 함수
+    function updateRealTimeClock() {
+        const now = new Date();
+        const kstString = now.toLocaleString('ko-KR', {
+            timeZone: 'Asia/Seoul',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        });
+        
+        const formattedTime = `KST ${kstString}`;
+        
+        // 헤더 시계 업데이트
+        liveClockHeader.textContent = formattedTime;
+        
+        // 게임 오버 상태일 때 기록 시간도 계속 현재 시간으로 보여줄지, 
+        // 아니면 죽은 순간의 시간으로 박제할지에 따라 다름. (여기선 실시간 유지)
+        gameOverTime.textContent = `기록 시간: ${formattedTime}`;
+    }
+
+    // 1초마다 시계 업데이트 실행
+    setInterval(updateRealTimeClock, 1000);
+    updateRealTimeClock(); // 페이지 열리자마자 바로 1회 실행
 
     function generateTarget() {
         let difficultyFactor = totalTimeSurvived / 60;
@@ -319,8 +369,6 @@
     actionBtn.addEventListener('click', () => {
         if (!isPlaying) return;
 
-        // [핵심 패치] 이제 복잡한 겹침 계산 다 빼버렸습니다! 
-        // 얇아진 빨간 바의 정확한 위치(indicatorPos)가 노란색/초록색 구역 안에 있는지 직관적으로 검사합니다.
         const isPerfect = (indicatorPos >= perfectStart) && (indicatorPos <= (perfectStart + perfectWidth));
         const isGood = (indicatorPos >= targetStart) && (indicatorPos <= (targetStart + goodWidth));
 
@@ -344,6 +392,13 @@
         timeDisplay.textContent = "0.0초";
         gameOverScreen.style.display = 'flex';
         finalScore.textContent = totalTimeSurvived.toFixed(1);
+        
+        // 게임 오버되는 순간의 정확한 시간 박제
+        const now = new Date();
+        const kstString = now.toLocaleString('ko-KR', {
+            timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+        });
+        gameOverTime.textContent = `기록 시간: KST ${kstString}`;
     }
 
     restartBtn.addEventListener('click', () => {
