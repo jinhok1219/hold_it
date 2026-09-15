@@ -318,20 +318,20 @@
     actionBtn.addEventListener('click', () => {
         if (!isPlaying) return;
 
-        // [핵심 패치] 시각적 히트박스(겹침) 판정으로 변경
+        // [핵심 패치 2] 빨간 바의 '정중앙(Center)' 픽셀을 구해서 정확하게 판정!
         const indicatorRect = indicator.getBoundingClientRect();
         const gaugeRect = gaugeContainer.getBoundingClientRect();
-        const indWidthPct = (indicatorRect.width / gaugeRect.width) * 100; // 빨간 바의 실제 가로 너비(%)
+        const indWidthPct = (indicatorRect.width / gaugeRect.width) * 100; 
 
-        const indLeft = indicatorPos; // 빨간 바 왼쪽 끝
-        const indRight = indicatorPos + indWidthPct; // 빨간 바 오른쪽 끝
+        // 빨간 바의 정중앙 좌표 (%)
+        const indCenter = indicatorPos + (indWidthPct / 2);
 
-        const perfectRight = perfectStart + perfectWidth; // 퍼펙트존 오른쪽 끝
-        const goodRight = targetStart + goodWidth; // 굿존 오른쪽 끝
+        const perfectRight = perfectStart + perfectWidth;
+        const goodRight = targetStart + goodWidth;
 
-        // 빨간 바의 오른쪽 끝이 타겟 왼쪽 끝을 넘고, 빨간 바 왼쪽 끝이 타겟 오른쪽 끝을 안 넘었으면 = "조금이라도 닿았다!"
-        const isPerfect = (indRight >= perfectStart) && (indLeft <= perfectRight);
-        const isGood = (indRight >= targetStart) && (indLeft <= goodRight);
+        // 중심점이 노란색 안에 있으면 퍼펙트, 초록색 안에만 있으면 굿!
+        const isPerfect = (indCenter >= perfectStart) && (indCenter <= perfectRight);
+        const isGood = (indCenter >= targetStart) && (indCenter <= goodRight);
 
         if (isPerfect) {
             timeLeft += 5;
