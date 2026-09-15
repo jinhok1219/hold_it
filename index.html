@@ -65,16 +65,17 @@
             z-index: 5;
         }
 
-        /* 움직이는 바 */
+        /* 움직이는 바 (두께를 확 줄이고 위치를 정확히 맞춤!) */
         #indicator {
-            width: 8px;
+            width: 4px; /* 기존 8px에서 4px로 다이어트! */
             height: 48px;
             background-color: #ef4444;
             position: absolute;
             top: -4px;
             left: 0%;
-            border-radius: 4px;
+            border-radius: 2px;
             box-shadow: 0 0 5px rgba(0,0,0,0.5);
+            transform: translateX(-50%); /* 시각적 위치와 판정 위치(%)를 100% 동일하게 맞춰주는 마법의 CSS */
             z-index: 10;
         }
 
@@ -318,20 +319,10 @@
     actionBtn.addEventListener('click', () => {
         if (!isPlaying) return;
 
-        // [핵심 패치 2] 빨간 바의 '정중앙(Center)' 픽셀을 구해서 정확하게 판정!
-        const indicatorRect = indicator.getBoundingClientRect();
-        const gaugeRect = gaugeContainer.getBoundingClientRect();
-        const indWidthPct = (indicatorRect.width / gaugeRect.width) * 100; 
-
-        // 빨간 바의 정중앙 좌표 (%)
-        const indCenter = indicatorPos + (indWidthPct / 2);
-
-        const perfectRight = perfectStart + perfectWidth;
-        const goodRight = targetStart + goodWidth;
-
-        // 중심점이 노란색 안에 있으면 퍼펙트, 초록색 안에만 있으면 굿!
-        const isPerfect = (indCenter >= perfectStart) && (indCenter <= perfectRight);
-        const isGood = (indCenter >= targetStart) && (indCenter <= goodRight);
+        // [핵심 패치] 이제 복잡한 겹침 계산 다 빼버렸습니다! 
+        // 얇아진 빨간 바의 정확한 위치(indicatorPos)가 노란색/초록색 구역 안에 있는지 직관적으로 검사합니다.
+        const isPerfect = (indicatorPos >= perfectStart) && (indicatorPos <= (perfectStart + perfectWidth));
+        const isGood = (indicatorPos >= targetStart) && (indicatorPos <= (targetStart + goodWidth));
 
         if (isPerfect) {
             timeLeft += 5;
