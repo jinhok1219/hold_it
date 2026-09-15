@@ -132,7 +132,7 @@
             opacity: 0;
             z-index: 30;
             pointer-events: none;
-            white-space: nowrap; /* 텍스트 줄바꿈 방지 */
+            white-space: nowrap; /* 글씨 안 깨지게 */
         }
 
         @keyframes popup {
@@ -196,7 +196,7 @@
         <div id="indicator"></div>
     </div>
 
-    <!-- 이미지 파일명이 정확히 image_eaacec.png 인지 확인해주세요! -->
+    <!-- 호랑이 캐릭터 이미지 -->
     <img id="character-img" src="image_eaacec.png" alt="호랑이 캐릭터">
 
     <button id="action-btn">참기!</button>
@@ -216,7 +216,7 @@
     
     let goodWidth = 20; 
     let perfectWidth = 6; 
-    let speed = 1.0; 
+    let speed = 40.0; 
     
     let indicatorPos = 0; 
     let direction = 1; 
@@ -238,7 +238,15 @@
     const finalScore = document.getElementById('final-score');
     const restartBtn = document.getElementById('restart-btn');
 
+    // 버그 수정 완료: 타겟이 새로 나타날 때만 크기를 결정하도록 변경! (판정 엇갈림 방지)
     function generateTarget() {
+        let difficultyFactor = totalTimeSurvived / 60;
+        if (difficultyFactor > 1) difficultyFactor = 1;
+
+        // 크기는 새로운 구역이 나타날 때만 변경됩니다.
+        goodWidth = 20 - (14 * difficultyFactor); // 최소 6%
+        perfectWidth = 6 - (5 * difficultyFactor); // 최소 1%
+
         targetStart = Math.random() * (100 - goodWidth);
         perfectStart = targetStart + (goodWidth / 2) - (perfectWidth / 2);
 
@@ -264,14 +272,10 @@
                 return;
             }
 
-            // 난이도 상승 속도 2배 증가 (60초만에 최고 난이도 도달)
+            // 바늘의 이동 속도만 실시간으로 즉각 반응하여 빠르게 만듭니다.
             let difficultyFactor = totalTimeSurvived / 60;
             if (difficultyFactor > 1) difficultyFactor = 1;
-
-            // 칸 크기는 더 작아지고, 바 속도는 더 빨라짐
-            goodWidth = 20 - (14 * difficultyFactor); // 최소 6%까지 좁아짐
-            perfectWidth = 6 - (5 * difficultyFactor); // 최소 1%까지 좁아짐 (바늘구멍)
-            speed = 40 + (200 * difficultyFactor); // 최고 속도 대폭 상향
+            speed = 40 + (200 * difficultyFactor); 
 
             indicatorPos += (speed * deltaTime * direction);
             
@@ -317,6 +321,7 @@
     actionBtn.addEventListener('click', () => {
         if (!isPlaying) return;
 
+        // 정확한 판정 로직
         const isGood = indicatorPos >= targetStart && indicatorPos <= (targetStart + goodWidth);
         const isPerfect = indicatorPos >= perfectStart && indicatorPos <= (perfectStart + perfectWidth);
 
@@ -327,12 +332,12 @@
             timeLeft += 3;
             showJudgment("GOOD! +3초", "#4ade80");
         } else {
-            // 실패 시 페널티 (-1초)
-            timeLeft -= 1;
+            timeLeft -= 1; // 실패 페널티 추가
             createFart();
             showJudgment("MISS! -1초", "#ef4444");
         }
 
+        // 판정이 끝난 후 새로운 타겟 생성
         generateTarget();
     });
 
@@ -346,8 +351,6 @@
     restartBtn.addEventListener('click', () => {
         timeLeft = 10.0;
         totalTimeSurvived = 0;
-        goodWidth = 20;
-        perfectWidth = 6;
         speed = 40;
         isPlaying = true;
         gameOverScreen.style.display = 'none';
