@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>화장실 참기 게임</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f0f8ff;
+            font-family: 'Pretendard', sans-serif;
+            overflow: hidden;
+        }
+
+        #game-container {
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+            position: relative;
+            padding-top: 20px;
+        }
+
+        #header {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .time-warning { color: red; }
+
+        /* 게이지 바 영역 */
+        #gauge-container {
+            width: 90%;
+            height: 40px;
+            background-color: #333;
+            border-radius: 20px;
+            margin: 0 auto;
+            position: relative;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        /* 굿, 퍼펙트 칸 */
+        #zone-good {
+            height: 100%;
+            background-color: #4ade80; /* 연두색 */
+            position: absolute;
+            top: 0;
+            border-radius: 5px;
+        }
+
+        #zone-perfect {
+            height: 100%;
+            background-color: #facc15; /* 노란색 */
+            position: absolute;
+            top: 0;
+            border-radius: 5px;
+        }
+
+        /* 움직이는 바 */
+        #indicator {
+            width: 8px;
+            height: 48px;
+            background-color: #ef4444; /* 빨간색 */
+            position: absolute;
+            top: -4px;
+            left: 0%;
+            border-radius: 4px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        /* 방귀 이펙트 (페널티) */
+        .fart-cloud {
+            position: absolute;
+            height: 60px;
+            width: 60px;
+            background: radial-gradient(circle, rgba(139,69,19,0.9) 0%, rgba(107,142,35,0.7) 60%, rgba(0,0,0,0) 100%);
+            border-radius: 50%;
+            top: -10px;
+            filter: blur(4px);
+            z-index: 20;
+            animation: fadeout 3s forwards;
+        }
+
+        @keyframes fadeout {
+            0% { opacity: 1; transform: scale(1); }
+            80% { opacity: 0.8; transform: scale(1.5); }
+            100% { opacity: 0; transform: scale(2); }
+        }
+
+        /* 중앙 캐릭터 이미지 */
+        #character-img {
+            width: 250px;
+            margin: 30px auto;
+            display: block;
+            border-radius: 20px;
+            animation: shake 2s infinite;
+        }
+
+        /* 시간 줄어들때 캐릭터 떨림 효과 */
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+
+        /* 판정 글씨 이펙트 */
+        #judgment-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 40px;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+            opacity: 0;
+            z-index: 30;
+            pointer-events: none;
+        }
+
+        @keyframes popup {
+            0% { opacity: 1; transform: translate(-50%, -30%) scale(0.5); }
+            50% { transform: translate(-50%, -60%) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -80%) scale(1); }
+        }
+
+        .popup-anim {
+            animation: popup 0.8s ease-out forwards;
+        }
+
+        /* 조작 버튼 */
+        #action-btn {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 24px;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: transform 0.1s, background-color 0.2s;
+        }
+
+        #action-btn:active {
+            transform: scale(0.95);
+        }
+
+        #game-over-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            display: none;
+        }
+
+        #game-over-screen h1 { color: #facc15; font-size: 48px; margin-bottom: 10px; }
+        #restart-btn {
+            margin-top: 20px; padding: 10px 20px; font-size: 20px;
+            background: #fff; color: #000; border: none; border-radius: 10px; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="header">
+        <div>버틴 시간: <span id="score-display">0</span>초</div>
+        <div id="time-display">10.0초</div>
+    </div>
+
+    <!-- 게이지 바 -->
+    <div id="gauge-container">
+        <div id="zone-good"></div>
+        <div id="zone-perfect"></div>
+        <div id="indicator"></div>
+        <!-- 방귀 이펙트가 여기에 생성됨 -->
+    </div>
+
+    <!-- 제공해주신 호랑이 이미지 -->
+    <img id="character-img" src="image_eaacec.jpg" alt="호랑이 캐릭터">
+
+    <!-- 조작 버튼 -->
+    <button id="action-btn">참기!</button>
+
+    <!-- 판정 텍스트 -->
+    <div id="judgment-text">PERFECT!</div>
+</div>
+
+<div id="game-over-screen">
+    <h1>결국... 쌌다! 💩</h1>
+    <h2>버틴 시간: <span id="final-score">0</span>초</h2>
+    <button id="restart-btn">다시 도전하기</button>
+</div>
+
+<script>
+    // 게임 상태 변수
+    let timeLeft = 10.0;
+    let totalTimeSurvived = 0.0;
+    let isPlaying = true;
+    
+    // 난이도 관련 변수
+    let goodWidth = 20; // 굿 칸 너비 (%)
+    let perfectWidth = 6; // 퍼펙트 칸 너비 (%)
+    let speed = 1.0; // 바 이동 속도 (값이 클수록 빠름)
+    
+    let indicatorPos = 0; // 바 위치 (0~100)
+    let direction = 1; // 1은 오른쪽, -1은 왼쪽
+    let targetStart = 0; // 굿 칸 시작 위치
+    let perfectStart = 0; // 퍼펙트 칸 시작 위치
+
+    let gameLoop;
+    let lastTime = 0;
+
+    // DOM 요소 가져오기
+    const timeDisplay = document.getElementById('time-display');
+    const scoreDisplay = document.getElementById('score-display');
+    const indicator = document.getElementById('indicator');
+    const zoneGood = document.getElementById('zone-good');
+    const zonePerfect = document.getElementById('zone-perfect');
+    const actionBtn = document.getElementById('action-btn');
+    const judgmentText = document.getElementById('judgment-text');
+    const gaugeContainer = document.getElementById('gauge-container');
+    const gameOverScreen = document.getElementById('game-over-screen');
+    const finalScore = document.getElementById('final-score');
+    const restartBtn = document.getElementById('restart-btn');
+
+    // 목표 칸 랜덤 생성 함수
+    function generateTarget() {
+        // 목표가 게이지를 벗어나지 않도록 설정
+        targetStart = Math.random() * (100 - goodWidth);
+        perfectStart = targetStart + (goodWidth / 2) - (perfectWidth / 2);
+
+        zoneGood.style.left = targetStart + '%';
+        zoneGood.style.width = goodWidth + '%';
+        
+        zonePerfect.style.left = perfectStart + '%';
+        zonePerfect.style.width = perfectWidth + '%';
+    }
+
+    // 게임 루프 (애니메이션 및 타이머 처리)
+    function update(timestamp) {
+        if (!isPlaying) return;
+
+        const deltaTime = (timestamp - lastTime) / 1000;
+        lastTime = timestamp;
+
+        if (deltaTime < 0.1) { // 탭 변경 등으로 인한 과도한 델타 방지
+            // 시간 감소
+            timeLeft -= deltaTime;
+            totalTimeSurvived += deltaTime;
+
+            if (timeLeft <= 0) {
+                gameOver();
+                return;
+            }
+
+            // 난이도 조절 로직 (시간이 지날수록 칸은 좁아지고 속도는 빨라짐)
+            // 2분(120초)일 때 최고 난이도에 도달하도록 설정
+            let difficultyFactor = totalTimeSurvived / 120;
+            if (difficultyFactor > 1) difficultyFactor = 1;
+
+            goodWidth = 20 - (10 * difficultyFactor); // 최소 10%
+            perfectWidth = 6 - (4 * difficultyFactor); // 최소 2%
+            speed = 40 + (100 * difficultyFactor); // 이동 속도 증가 (초당 % 이동량)
+
+            // 인디케이터 이동
+            indicatorPos += (speed * deltaTime * direction);
+            
+            if (indicatorPos >= 100) {
+                indicatorPos = 100;
+                direction = -1;
+            } else if (indicatorPos <= 0) {
+                indicatorPos = 0;
+                direction = 1;
+            }
+
+            // 화면 업데이트
+            timeDisplay.textContent = timeLeft.toFixed(1) + '초';
+            if (timeLeft <= 3) timeDisplay.classList.add('time-warning');
+            else timeDisplay.classList.remove('time-warning');
+
+            scoreDisplay.textContent = totalTimeSurvived.toFixed(0);
+            indicator.style.left = indicatorPos + '%';
+        }
+
+        gameLoop = requestAnimationFrame(update);
+    }
+
+    // 판정 글씨 애니메이션 띄우기
+    function showJudgment(text, color) {
+        judgmentText.textContent = text;
+        judgmentText.style.color = color;
+        judgmentText.classList.remove('popup-anim');
+        void judgmentText.offsetWidth; // 리플로우 강제 (애니메이션 재시작 트릭)
+        judgmentText.classList.add('popup-anim');
+    }
+
+    // 방귀 이펙트 생성 (페널티)
+    function createFart() {
+        const fart = document.createElement('div');
+        fart.className = 'fart-cloud';
+        // 방귀 위치 게이지 내 랜덤
+        const randomX = Math.random() * 90;
+        fart.style.left = randomX + '%';
+        gaugeContainer.appendChild(fart);
+
+        // 3초 뒤에 자동 삭제
+        setTimeout(() => {
+            if(fart.parentElement) fart.remove();
+        }, 3000);
+    }
+
+    // 참기! 버튼 클릭 로직
+    actionBtn.addEventListener('click', () => {
+        if (!isPlaying) return;
+
+        // 판정 확인
+        const isGood = indicatorPos >= targetStart && indicatorPos <= (targetStart + goodWidth);
+        const isPerfect = indicatorPos >= perfectStart && indicatorPos <= (perfectStart + perfectWidth);
+
+        if (isPerfect) {
+            timeLeft += 5;
+            showJudgment("PERFECT! +5초", "#facc15");
+        } else if (isGood) {
+            timeLeft += 3;
+            showJudgment("GOOD! +3초", "#4ade80");
+        } else {
+            // 실패 시 페널티
+            createFart();
+            showJudgment("MISS!", "#ef4444");
+        }
+
+        // 버튼 누르면 즉시 새로운 타겟 생성하여 이어서 진행
+        generateTarget();
+    });
+
+    // 게임 오버
+    function gameOver() {
+        isPlaying = false;
+        timeDisplay.textContent = "0.0초";
+        gameOverScreen.style.display = 'flex';
+        finalScore.textContent = totalTimeSurvived.toFixed(1);
+    }
+
+    // 게임 재시작
+    restartBtn.addEventListener('click', () => {
+        timeLeft = 10.0;
+        totalTimeSurvived = 0;
+        goodWidth = 20;
+        perfectWidth = 6;
+        speed = 40;
+        isPlaying = true;
+        gameOverScreen.style.display = 'none';
+        
+        // 기존 방귀들 제거
+        document.querySelectorAll('.fart-cloud').forEach(el => el.remove());
+
+        generateTarget();
+        lastTime = performance.now();
+        requestAnimationFrame(update);
+    });
+
+    // 초기화 및 실행
+    generateTarget();
+    lastTime = performance.now();
+    gameLoop = requestAnimationFrame(update);
+
+</script>
+
+</body>
+</html>
