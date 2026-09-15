@@ -203,7 +203,7 @@
 <div id="game-container">
     <div id="header">
         <div class="score-container">
-            <div>버틴 시간: <span id="score-display">0</span>초</div>
+            <div>버틴 시간: <span id="score-display">0.0</span>초</div>
             <div id="live-clock-header" class="real-time-clock">KST --:--:--</div>
         </div>
         <div id="time-display">10.0초</div>
@@ -223,7 +223,7 @@
 
 <div id="game-over-screen">
     <h1>결국... 쌌다! 💩</h1>
-    <h2>버틴 시간: <span id="final-score">0</span>초</h2>
+    <h2>버틴 시간: <span id="final-score">0.0</span>초</h2>
     <div id="game-over-time">기록 시간: KST --:--:--</div>
     <button id="restart-btn">다시 도전하기</button>
 </div>
@@ -257,11 +257,9 @@
     const finalScore = document.getElementById('final-score');
     const restartBtn = document.getElementById('restart-btn');
     
-    // 실시간 시계 요소 가져오기
     const liveClockHeader = document.getElementById('live-clock-header');
     const gameOverTime = document.getElementById('game-over-time');
 
-    // 실시간 한국 시간(KST) 업데이트 함수
     function updateRealTimeClock() {
         const now = new Date();
         const kstString = now.toLocaleString('ko-KR', {
@@ -275,19 +273,11 @@
             hour12: false
         });
         
-        const formattedTime = `KST ${kstString}`;
-        
-        // 헤더 시계 업데이트
-        liveClockHeader.textContent = formattedTime;
-        
-        // 게임 오버 상태일 때 기록 시간도 계속 현재 시간으로 보여줄지, 
-        // 아니면 죽은 순간의 시간으로 박제할지에 따라 다름. (여기선 실시간 유지)
-        gameOverTime.textContent = `기록 시간: ${formattedTime}`;
+        liveClockHeader.textContent = `KST ${kstString}`;
     }
 
-    // 1초마다 시계 업데이트 실행
     setInterval(updateRealTimeClock, 1000);
-    updateRealTimeClock(); // 페이지 열리자마자 바로 1회 실행
+    updateRealTimeClock(); 
 
     function generateTarget() {
         let difficultyFactor = totalTimeSurvived / 60;
@@ -339,7 +329,8 @@
             if (timeLeft <= 3) timeDisplay.classList.add('time-warning');
             else timeDisplay.classList.remove('time-warning');
 
-            scoreDisplay.textContent = totalTimeSurvived.toFixed(0);
+            // [수정됨] 인게임 버틴 시간을 소수점 첫째 자리까지 표시
+            scoreDisplay.textContent = totalTimeSurvived.toFixed(1);
             indicator.style.left = indicatorPos + '%';
         }
 
@@ -391,9 +382,10 @@
         isPlaying = false;
         timeDisplay.textContent = "0.0초";
         gameOverScreen.style.display = 'flex';
+        // 결과창 버틴 시간 소수점 첫째 자리 표시
         finalScore.textContent = totalTimeSurvived.toFixed(1);
         
-        // 게임 오버되는 순간의 정확한 시간 박제
+        // [수정됨] 결과가 나온 정확한 시점의 시간만 고정 박제
         const now = new Date();
         const kstString = now.toLocaleString('ko-KR', {
             timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
