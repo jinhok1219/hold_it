@@ -62,6 +62,7 @@
             position: absolute;
             top: 0;
             border-radius: 5px;
+            z-index: 5;
         }
 
         /* 움직이는 바 */
@@ -132,7 +133,7 @@
             opacity: 0;
             z-index: 30;
             pointer-events: none;
-            white-space: nowrap; /* 글씨 안 깨지게 */
+            white-space: nowrap; 
         }
 
         @keyframes popup {
@@ -196,7 +197,6 @@
         <div id="indicator"></div>
     </div>
 
-    <!-- 호랑이 캐릭터 이미지 -->
     <img id="character-img" src="image_eaacec.png" alt="호랑이 캐릭터">
 
     <button id="action-btn">참기!</button>
@@ -238,14 +238,12 @@
     const finalScore = document.getElementById('final-score');
     const restartBtn = document.getElementById('restart-btn');
 
-    // 버그 수정 완료: 타겟이 새로 나타날 때만 크기를 결정하도록 변경! (판정 엇갈림 방지)
     function generateTarget() {
         let difficultyFactor = totalTimeSurvived / 60;
         if (difficultyFactor > 1) difficultyFactor = 1;
 
-        // 크기는 새로운 구역이 나타날 때만 변경됩니다.
-        goodWidth = 20 - (14 * difficultyFactor); // 최소 6%
-        perfectWidth = 6 - (5 * difficultyFactor); // 최소 1%
+        goodWidth = 20 - (14 * difficultyFactor); 
+        perfectWidth = 6 - (5 * difficultyFactor); 
 
         targetStart = Math.random() * (100 - goodWidth);
         perfectStart = targetStart + (goodWidth / 2) - (perfectWidth / 2);
@@ -272,7 +270,6 @@
                 return;
             }
 
-            // 바늘의 이동 속도만 실시간으로 즉각 반응하여 빠르게 만듭니다.
             let difficultyFactor = totalTimeSurvived / 60;
             if (difficultyFactor > 1) difficultyFactor = 1;
             speed = 40 + (200 * difficultyFactor); 
@@ -321,9 +318,20 @@
     actionBtn.addEventListener('click', () => {
         if (!isPlaying) return;
 
-        // 정확한 판정 로직
-        const isGood = indicatorPos >= targetStart && indicatorPos <= (targetStart + goodWidth);
-        const isPerfect = indicatorPos >= perfectStart && indicatorPos <= (perfectStart + perfectWidth);
+        // [핵심 패치] 시각적 히트박스(겹침) 판정으로 변경
+        const indicatorRect = indicator.getBoundingClientRect();
+        const gaugeRect = gaugeContainer.getBoundingClientRect();
+        const indWidthPct = (indicatorRect.width / gaugeRect.width) * 100; // 빨간 바의 실제 가로 너비(%)
+
+        const indLeft = indicatorPos; // 빨간 바 왼쪽 끝
+        const indRight = indicatorPos + indWidthPct; // 빨간 바 오른쪽 끝
+
+        const perfectRight = perfectStart + perfectWidth; // 퍼펙트존 오른쪽 끝
+        const goodRight = targetStart + goodWidth; // 굿존 오른쪽 끝
+
+        // 빨간 바의 오른쪽 끝이 타겟 왼쪽 끝을 넘고, 빨간 바 왼쪽 끝이 타겟 오른쪽 끝을 안 넘었으면 = "조금이라도 닿았다!"
+        const isPerfect = (indRight >= perfectStart) && (indLeft <= perfectRight);
+        const isGood = (indRight >= targetStart) && (indLeft <= goodRight);
 
         if (isPerfect) {
             timeLeft += 5;
@@ -332,12 +340,11 @@
             timeLeft += 3;
             showJudgment("GOOD! +3초", "#4ade80");
         } else {
-            timeLeft -= 1; // 실패 페널티 추가
+            timeLeft -= 1; 
             createFart();
             showJudgment("MISS! -1초", "#ef4444");
         }
 
-        // 판정이 끝난 후 새로운 타겟 생성
         generateTarget();
     });
 
