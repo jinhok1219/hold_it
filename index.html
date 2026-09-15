@@ -180,7 +180,7 @@
         #game-over-screen {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); /* 배경을 살짝 더 진하게 */
+            background: rgba(0,0,0,0.85);
             color: white;
             display: flex;
             flex-direction: column;
@@ -192,10 +192,9 @@
             box-sizing: border-box;
         }
 
-        /* 게임 오버 이미지 스타일 */
         #game-over-img {
             max-width: 90%;
-            max-height: 45vh; /* 화면 크기에 맞춰 조절 */
+            max-height: 45vh; 
             border-radius: 15px;
             margin-bottom: 25px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
@@ -297,6 +296,13 @@
     const liveClockHeader = document.getElementById('live-clock-header');
     const gameOverTime = document.getElementById('game-over-time');
 
+    // [핵심 추가] 스페이스바 입력 무시 로직
+    window.addEventListener('keydown', function(e) {
+        if (e.code === 'Space' || e.key === ' ') {
+            e.preventDefault(); // 스페이스바로 인한 클릭, 스크롤링 등 모든 기본 동작 차단
+        }
+    });
+
     function updateRealTimeClock() {
         const now = new Date();
         const kstString = now.toLocaleString('ko-KR', {
@@ -393,7 +399,10 @@
         }, 3000);
     }
 
-    actionBtn.addEventListener('click', () => {
+    actionBtn.addEventListener('click', (e) => {
+        // [핵심 추가] 버튼 클릭 시 포커스 해제 (잔여 포커스로 인한 버그 완벽 차단)
+        actionBtn.blur();
+
         if (!isPlaying) return;
 
         const isPerfect = (indicatorPos >= perfectStart) && (indicatorPos <= (perfectStart + perfectWidth));
@@ -406,8 +415,7 @@
             timeLeft += 3;
             showJudgment("GOOD! +3초", "#4ade80");
         } else {
-            // [수정됨] 실패 페널티를 -2초로 강화!
-            timeLeft -= 2; 
+            timeLeft -= 2; // 미스 시 2초 깎기
             createFart();
             showJudgment("MISS! -2초", "#ef4444");
         }
@@ -429,6 +437,7 @@
     }
 
     restartBtn.addEventListener('click', () => {
+        restartBtn.blur(); // 재시작 버튼도 스페이스바 방지를 위해 포커스 해제
         timeLeft = 10.0;
         totalTimeSurvived = 0;
         speed = 40;
