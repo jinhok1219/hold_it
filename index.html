@@ -50,7 +50,7 @@
         /* 굿, 퍼펙트 칸 */
         #zone-good {
             height: 100%;
-            background-color: #4ade80; /* 연두색 */
+            background-color: #4ade80;
             position: absolute;
             top: 0;
             border-radius: 5px;
@@ -58,7 +58,7 @@
 
         #zone-perfect {
             height: 100%;
-            background-color: #facc15; /* 노란색 */
+            background-color: #facc15;
             position: absolute;
             top: 0;
             border-radius: 5px;
@@ -68,7 +68,7 @@
         #indicator {
             width: 8px;
             height: 48px;
-            background-color: #ef4444; /* 빨간색 */
+            background-color: #ef4444;
             position: absolute;
             top: -4px;
             left: 0%;
@@ -77,7 +77,7 @@
             z-index: 10;
         }
 
-        /* 방귀 이펙트 (페널티) */
+        /* 방귀 이펙트 */
         .fart-cloud {
             position: absolute;
             height: 60px;
@@ -105,7 +105,6 @@
             animation: shake 2s infinite;
         }
 
-        /* 시간 줄어들때 캐릭터 떨림 효과 */
         @keyframes shake {
             0% { transform: translate(1px, 1px) rotate(0deg); }
             10% { transform: translate(-1px, -2px) rotate(-1deg); }
@@ -120,7 +119,7 @@
             100% { transform: translate(1px, -2px) rotate(-1deg); }
         }
 
-        /* 판정 글씨 이펙트 */
+        /* 판정 글씨 */
         #judgment-text {
             position: absolute;
             top: 50%;
@@ -133,6 +132,7 @@
             opacity: 0;
             z-index: 30;
             pointer-events: none;
+            white-space: nowrap; /* 텍스트 줄바꿈 방지 */
         }
 
         @keyframes popup {
@@ -145,7 +145,6 @@
             animation: popup 0.8s ease-out forwards;
         }
 
-        /* 조작 버튼 */
         #action-btn {
             background-color: #3b82f6;
             color: white;
@@ -191,21 +190,16 @@
         <div id="time-display">10.0초</div>
     </div>
 
-    <!-- 게이지 바 -->
     <div id="gauge-container">
         <div id="zone-good"></div>
         <div id="zone-perfect"></div>
         <div id="indicator"></div>
-        <!-- 방귀 이펙트가 여기에 생성됨 -->
     </div>
 
-    <!-- 제공해주신 호랑이 이미지 -->
-    <img id="character-img" src="image_eaacec.jpg" alt="호랑이 캐릭터">
+    <!-- 이미지 파일명이 정확히 image_eaacec.png 인지 확인해주세요! -->
+    <img id="character-img" src="image_eaacec.png" alt="호랑이 캐릭터">
 
-    <!-- 조작 버튼 -->
     <button id="action-btn">참기!</button>
-
-    <!-- 판정 텍스트 -->
     <div id="judgment-text">PERFECT!</div>
 </div>
 
@@ -216,25 +210,22 @@
 </div>
 
 <script>
-    // 게임 상태 변수
     let timeLeft = 10.0;
     let totalTimeSurvived = 0.0;
     let isPlaying = true;
     
-    // 난이도 관련 변수
-    let goodWidth = 20; // 굿 칸 너비 (%)
-    let perfectWidth = 6; // 퍼펙트 칸 너비 (%)
-    let speed = 1.0; // 바 이동 속도 (값이 클수록 빠름)
+    let goodWidth = 20; 
+    let perfectWidth = 6; 
+    let speed = 1.0; 
     
-    let indicatorPos = 0; // 바 위치 (0~100)
-    let direction = 1; // 1은 오른쪽, -1은 왼쪽
-    let targetStart = 0; // 굿 칸 시작 위치
-    let perfectStart = 0; // 퍼펙트 칸 시작 위치
+    let indicatorPos = 0; 
+    let direction = 1; 
+    let targetStart = 0; 
+    let perfectStart = 0; 
 
     let gameLoop;
     let lastTime = 0;
 
-    // DOM 요소 가져오기
     const timeDisplay = document.getElementById('time-display');
     const scoreDisplay = document.getElementById('score-display');
     const indicator = document.getElementById('indicator');
@@ -247,9 +238,7 @@
     const finalScore = document.getElementById('final-score');
     const restartBtn = document.getElementById('restart-btn');
 
-    // 목표 칸 랜덤 생성 함수
     function generateTarget() {
-        // 목표가 게이지를 벗어나지 않도록 설정
         targetStart = Math.random() * (100 - goodWidth);
         perfectStart = targetStart + (goodWidth / 2) - (perfectWidth / 2);
 
@@ -260,15 +249,13 @@
         zonePerfect.style.width = perfectWidth + '%';
     }
 
-    // 게임 루프 (애니메이션 및 타이머 처리)
     function update(timestamp) {
         if (!isPlaying) return;
 
         const deltaTime = (timestamp - lastTime) / 1000;
         lastTime = timestamp;
 
-        if (deltaTime < 0.1) { // 탭 변경 등으로 인한 과도한 델타 방지
-            // 시간 감소
+        if (deltaTime < 0.1) {
             timeLeft -= deltaTime;
             totalTimeSurvived += deltaTime;
 
@@ -277,16 +264,15 @@
                 return;
             }
 
-            // 난이도 조절 로직 (시간이 지날수록 칸은 좁아지고 속도는 빨라짐)
-            // 2분(120초)일 때 최고 난이도에 도달하도록 설정
-            let difficultyFactor = totalTimeSurvived / 120;
+            // 난이도 상승 속도 2배 증가 (60초만에 최고 난이도 도달)
+            let difficultyFactor = totalTimeSurvived / 60;
             if (difficultyFactor > 1) difficultyFactor = 1;
 
-            goodWidth = 20 - (10 * difficultyFactor); // 최소 10%
-            perfectWidth = 6 - (4 * difficultyFactor); // 최소 2%
-            speed = 40 + (100 * difficultyFactor); // 이동 속도 증가 (초당 % 이동량)
+            // 칸 크기는 더 작아지고, 바 속도는 더 빨라짐
+            goodWidth = 20 - (14 * difficultyFactor); // 최소 6%까지 좁아짐
+            perfectWidth = 6 - (5 * difficultyFactor); // 최소 1%까지 좁아짐 (바늘구멍)
+            speed = 40 + (200 * difficultyFactor); // 최고 속도 대폭 상향
 
-            // 인디케이터 이동
             indicatorPos += (speed * deltaTime * direction);
             
             if (indicatorPos >= 100) {
@@ -297,7 +283,6 @@
                 direction = 1;
             }
 
-            // 화면 업데이트
             timeDisplay.textContent = timeLeft.toFixed(1) + '초';
             if (timeLeft <= 3) timeDisplay.classList.add('time-warning');
             else timeDisplay.classList.remove('time-warning');
@@ -309,35 +294,29 @@
         gameLoop = requestAnimationFrame(update);
     }
 
-    // 판정 글씨 애니메이션 띄우기
     function showJudgment(text, color) {
         judgmentText.textContent = text;
         judgmentText.style.color = color;
         judgmentText.classList.remove('popup-anim');
-        void judgmentText.offsetWidth; // 리플로우 강제 (애니메이션 재시작 트릭)
+        void judgmentText.offsetWidth;
         judgmentText.classList.add('popup-anim');
     }
 
-    // 방귀 이펙트 생성 (페널티)
     function createFart() {
         const fart = document.createElement('div');
         fart.className = 'fart-cloud';
-        // 방귀 위치 게이지 내 랜덤
         const randomX = Math.random() * 90;
         fart.style.left = randomX + '%';
         gaugeContainer.appendChild(fart);
 
-        // 3초 뒤에 자동 삭제
         setTimeout(() => {
             if(fart.parentElement) fart.remove();
         }, 3000);
     }
 
-    // 참기! 버튼 클릭 로직
     actionBtn.addEventListener('click', () => {
         if (!isPlaying) return;
 
-        // 판정 확인
         const isGood = indicatorPos >= targetStart && indicatorPos <= (targetStart + goodWidth);
         const isPerfect = indicatorPos >= perfectStart && indicatorPos <= (perfectStart + perfectWidth);
 
@@ -348,16 +327,15 @@
             timeLeft += 3;
             showJudgment("GOOD! +3초", "#4ade80");
         } else {
-            // 실패 시 페널티
+            // 실패 시 페널티 (-1초)
+            timeLeft -= 1;
             createFart();
-            showJudgment("MISS!", "#ef4444");
+            showJudgment("MISS! -1초", "#ef4444");
         }
 
-        // 버튼 누르면 즉시 새로운 타겟 생성하여 이어서 진행
         generateTarget();
     });
 
-    // 게임 오버
     function gameOver() {
         isPlaying = false;
         timeDisplay.textContent = "0.0초";
@@ -365,7 +343,6 @@
         finalScore.textContent = totalTimeSurvived.toFixed(1);
     }
 
-    // 게임 재시작
     restartBtn.addEventListener('click', () => {
         timeLeft = 10.0;
         totalTimeSurvived = 0;
@@ -375,7 +352,6 @@
         isPlaying = true;
         gameOverScreen.style.display = 'none';
         
-        // 기존 방귀들 제거
         document.querySelectorAll('.fart-cloud').forEach(el => el.remove());
 
         generateTarget();
@@ -383,11 +359,9 @@
         requestAnimationFrame(update);
     });
 
-    // 초기화 및 실행
     generateTarget();
     lastTime = performance.now();
     gameLoop = requestAnimationFrame(update);
-
 </script>
 
 </body>
